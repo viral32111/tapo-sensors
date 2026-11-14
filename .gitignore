@@ -5,9 +5,6 @@
 # Configuration files
 *.toml
 
-# Claude Code
-.claude/
-
 # Builds
 *-linux-*
 *.exe

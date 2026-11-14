@@ -89,6 +89,7 @@ func newSensor(child hub.ChildDevice, hubName string, hubIPAddress string) *Sens
 	gauges := Gauges{
 		Info: newGauge("sensor_info", "Metadata about the sensor; constant value of 1", prometheus.Labels{
 			"id":        child.DeviceID,
+			"name":      child.Name(),
 			"parent_id": child.ParentDeviceID,
 			"type":      child.Type,
 			"model":     child.Model,
