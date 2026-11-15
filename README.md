@@ -93,8 +93,6 @@ Every sensor paired with the hub is exported. Metrics that a sensor type does no
 
 #### Labels
 
-All sensor metrics except `tapo_sensor_info` have these labels:
-
 * `hub`: Name of the hub, as set in the configuration.
 * `id`: Device ID of the sensor.
 * `name`: Nickname set for the sensor in the Tapo app.
