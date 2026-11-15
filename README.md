@@ -15,7 +15,7 @@ Contact sensors such as the [Tapo T110](https://www.tapo.com/uk/product/smart-se
 
 ## 📥 Usage
 
-Download the [latest release](https://github.com/viral32111/tapo-sensors/releases/latest) for your platform. There are prebuilt binaries for Linux and Windows, covering both 32-bit and 64-bit architectures of x86 and ARM. There are additional Linux builds to accommodate glibc and musl systems.
+Download the [latest release](https://github.com/viral32111/tapo-sensors/releases/latest) for your platform. There are prebuilt binaries for Linux and Windows, covering both 32-bit and 64-bit architectures of x86 and ARM. **Linux builds are static with no libc dependency, thus work on both glibc & musl systems.**
 
 ### ⚠️ Pre-requisite
 
@@ -23,10 +23,15 @@ The hub will refuse local logins unless **Third-Party Compatibility** is enabled
 
 ### 🐳 Docker
 
-There are [Docker images](https://github.com/users/viral32111/packages/container/package/tapo-sensors) available for Linux, with variants for glibc (Ubuntu) and musl (Alpine Linux):
+There is a Docker image for Linux at [`ghcr.io/viral32111/tapo-sensors`](https://github.com/users/viral32111/packages/container/package/tapo-sensors). Please choose the appropriate tag for your use case:
 
- * `ghcr.io/viral32111/tapo-sensors:1.0-musl`
- * `ghcr.io/viral32111/tapo-sensors:1.0-glibc`
+| Tag | New features? | Bug fixes? | Breaking changes? | Notes |
+| --- | --- | --- | --- | --- |
+| `:1` | Yes | Yes | No | Recommended for short-term trials. |
+| `:1.0` | No | Yes | No | Recommended for long-term stability. |
+| `:1.0.0` | No | No | No | Not recommended unless dependent on a bug. |
+| `:main` | Yes | Yes | Yes | Not recommended unless actively testing. |
+| `:latest` | Yes | Yes | Yes | Not recommended unless actively testing. |
 
 ## 📊 Metrics
 
@@ -125,27 +130,20 @@ ip_address = "192.168.123.123" # $TAPO_HUB_IP_ADDRESS
 
 ## 🛠️ Building
 
-Run the relevant build command below, assuming you're on a Linux 64-bit (glibc) system.
+Run the relevant build command below, assuming you're on a Linux system.
 
-### Linux 64-bit (glibc)
-
-```bash
-GOOS=linux GOARCH=amd64 \
-	go build -o tapo-sensors-v0.0.0-linux-amd64-glibc ./cmd/tapo/main.go
-```
-
-### Linux 64-bit (musl)
+### Linux 64-bit
 
 ```bash
-CC=x86_64-linux-musl-gcc CXX=x86_64-linux-musl-g++ CGO_ENABLED=1 GOOS=linux GOARCH=amd64 \
-	go build -o tapo-sensors-v0.0.0-linux-amd64-musl ./cmd/tapo/main.go
+GOOS=linux GOARCH=amd64 CGO_ENABLED=0 \
+	go build -v -ldflags="-s -w -X main.VERSION=0.0.0" -o tapo-sensors-v0.0.0-linux-amd64 ./cmd/tapo/main.go
 ```
 
 ### Windows 64-bit
 
 ```bash
 GOOS=windows GOARCH=amd64 \
-	go build -o tapo-sensors-v0.0.0-windows-amd64.exe ./cmd/tapo/main.go
+	go build -v -ldflags="-s -w -X main.VERSION=0.0.0" -o tapo-sensors-v0.0.0-windows-amd64.exe ./cmd/tapo/main.go
 ```
 
 ## ⚖️ License
