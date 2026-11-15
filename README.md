@@ -1,4 +1,4 @@
-# Tapo Sensors
+# 🌡️ Tapo Sensors
 
 [![CI](https://github.com/viral32111/tapo-sensors/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/viral32111/tapo-sensors/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/viral32111/tapo-sensors/actions/workflows/codeql.yml/badge.svg)](https://github.com/viral32111/tapo-sensors/actions/workflows/codeql.yml)
