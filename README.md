@@ -33,6 +33,15 @@ There is a Docker image for Linux at [`ghcr.io/viral32111/tapo-sensors`](https:/
 | `:main` | Yes | Yes | Yes | Not recommended unless actively testing. |
 | `:latest` | Yes | Yes | Yes | Not recommended unless actively testing. |
 
+```bash
+docker container run \
+	--name tapo-sensors \
+	--publish 5000:5000 \
+	--rm \
+	ghcr.io/viral32111/tapo-sensors:1.0
+```
+
+
 ## 📊 Metrics
 
 All metrics are prefixed with `tapo_`.
@@ -93,35 +102,31 @@ All sensor metrics except `tapo_sensor_info` have these labels:
 
 ## ⚙️ Configuration
 
-Create a TOML configuration file similar to the example below. Every property can also be set via its corresponding `TAPO_*` environment variable, which takes precedence over the file.
+All configuration is via environment variables for easy deployment with Docker. See [`.env.example`](/.env.example). A variable that is set to an invalid value is an error, the exporter will refuse to start.
 
-```toml
-# The HTTP server for exposing metrics
-[metrics]
-listen = "127.0.0.1:5000" # $TAPO_METRICS_LISTEN
-path = "/metrics" # $TAPO_METRICS_PATH
-interval = "10s" # $TAPO_METRICS_INTERVAL
-
-# The TP-Link Tapo account credentials (used only for local authentication)
-[account]
-email = "john@example.com" # $TAPO_ACCOUNT_EMAIL
-password = "P4ssw0rd!" # $TAPO_ACCOUNT_PASSWORD
-
-# The TP-Link Tapo H200 sensor hub to monitor
-[hub]
-name = "My Sensor Hub" # $TAPO_HUB_NAME
-ip_address = "192.168.123.123" # $TAPO_HUB_IP_ADDRESS
-```
+The HTTP server starts straight away. If the hub cannot be reached at startup, the exporter logs a warning and retries with an increasing delay (starting at 5 seconds, doubling up to a maximum of 60 seconds) until it succeeds, and serves no hub metrics in the meantime. The sensors paired with the hub are discovered once it connects, so a sensor paired later requires a restart to be exported.
 
 | Name | Type | Description | Default |
 | --- | --- | --- | --- |
-| `TAPO_METRICS_LISTEN` | String | IP address & TCP port to listen for HTTP requests on. | `127.0.0.1:5000` |
-| `TAPO_METRICS_PATH` | String | HTTP path to expose metrics at. | `/metrics` |
-| `TAPO_METRICS_INTERVAL` | String | Interval to refresh metrics. | `10s` |
+| `TAPO_LOG_LEVEL` | String | Minimum level of logs to print (`debug`, `info`, `warn`, `error`). | `info` |
+| `TAPO_HTTP_ADDRESS` | String | IP address to listen for HTTP requests on. | `127.0.0.1` |
+| `TAPO_HTTP_PORT` | Number | TCP port to listen for HTTP requests on (`1` to `65535`). | `5000` |
+| `TAPO_METRICS_PATH` | String | HTTP path to expose Prometheus metrics on. Must start with `/`, must not end with `/` (unless it is just `/`), and must not contain whitespace. | `/metrics` |
+| `TAPO_METRICS_INTERVAL` | Duration | Interval between polls of the hub, must be greater than zero (e.g., `10s`). | `10s` |
+| `TAPO_METRICS_GO_BUILTIN` | Boolean | Whether to include Go runtime & process metrics. | `false` |
 | `TAPO_ACCOUNT_EMAIL` | String | Email address of the Tapo account. | |
 | `TAPO_ACCOUNT_PASSWORD` | String | Password of the Tapo account. | |
 | `TAPO_HUB_NAME` | String | Friendly name for the Tapo hub. | |
 | `TAPO_HUB_IP_ADDRESS` | String | IP address of the Tapo hub. | |
+
+The account email & password, and the hub name & IP address, are required.
+
+### 🚩 Flags
+
+| Flag | Description |
+| --- | --- |
+| `-v`, `--version` | Print the version & exit. |
+| `-u`, `--usage` | Show the usage message & exit. `-h` and `--help` are aliases. |
 
 ## 🧰 Development
 

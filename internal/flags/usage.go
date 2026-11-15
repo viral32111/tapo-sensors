@@ -2,35 +2,84 @@ package flags
 
 import (
 	"fmt"
+	"io"
 	"os"
+	"strconv"
+	"strings"
+
+	"github.com/viral32111/tapo-sensors/internal/config"
 )
 
-func printUsage() {
-	programName := os.Args[0]
+const (
+	PROJECT_TITLE       = "Tapo Sensors"
+	PROJECT_DESCRIPTION = "A Prometheus exporter for TP-Link Tapo H200 sensor hubs."
+	PROJECT_URL         = "https://github.com/viral32111/tapo-sensors"
+	PROJECT_COPYRIGHT   = "Copyright (C) 2026 viral32111, under the GNU AGPL v3.0 license."
+)
 
-	fmt.Printf(`A Prometheus exporter for TP-Link Tapo H200 sensor hubs.
-  https://github.com/viral32111/tapo-sensors
+const NAME_COLUMN_WIDTH = 27
 
-Usage:
-  %s [flags]
+type usageEntry struct {
+	name        string
+	description string
+	fallback    string
+}
 
-Flags:
-  -v, --version              Print version & exit.
-  -h, --help                 Show this help message & exit.
-  -c, --config <path>        Set path to TOML config file (default: '%s').
-  -l, --log-level <level>    Set minimum log level to print (default: '%s').
+func (entry usageEntry) describe() string {
+	if entry.fallback == "" {
+		return entry.description
+	}
 
-Environment variables:
-  TAPO_METRICS_LISTEN        The IP address & TCP port to listen on for Prometheus scrapes.
-  TAPO_METRICS_PATH          The HTTP path to serve Prometheus metrics on.
-  TAPO_METRICS_INTERVAL      The interval between polls of the hub (e.g. '10s').
-  TAPO_ACCOUNT_EMAIL         The TP-Link Tapo account email.
-  TAPO_ACCOUNT_PASSWORD      The TP-Link Tapo account password.
-  TAPO_HUB_NAME              A friendly name for the sensor hub.
-  TAPO_HUB_IP_ADDRESS        The IP address of the sensor hub.
+	return fmt.Sprintf("%s (default: '%s')", entry.description, entry.fallback)
+}
 
-Environment variables will take precedence over their corresponding config file properties.
+func PrintUsage(writer io.Writer) {
+	flagEntries := []usageEntry{
+		{"-v, --version", "Print version & exit.", ""},
+		{"-u, --usage", "Show this usage message & exit.", ""},
+	}
 
-Copyright (C) 2026 viral32111, under the GNU AGPL v3.0 license.
-`, programName, DEFAULT_CONFIG_PATH, DEFAULT_LOG_LEVEL)
+	environmentEntries := []usageEntry{
+		{"LOG_LEVEL", "Minimum level of logs to print (debug, info, warn, error)", strings.ToLower(config.DEFAULT_LOG_LEVEL.String())},
+		{"HTTP_ADDRESS", "IP address to listen for HTTP requests on", config.DEFAULT_HTTP_ADDRESS},
+		{"HTTP_PORT", "TCP port to listen for HTTP requests on", strconv.Itoa(config.DEFAULT_HTTP_PORT)},
+		{"METRICS_PATH", "HTTP path to expose Prometheus metrics on", config.DEFAULT_METRICS_PATH},
+		{"METRICS_GO_BUILTIN", "Whether to include Go runtime & process metrics", strconv.FormatBool(config.DEFAULT_METRICS_GO_BUILTIN)},
+		{"METRICS_INTERVAL", "Interval between polls of the hub", config.DEFAULT_METRICS_INTERVAL.String()},
+		{"ACCOUNT_EMAIL", "Email address of the TP-Link Tapo account (required)", ""},
+		{"ACCOUNT_PASSWORD", "Password of the TP-Link Tapo account (required)", ""},
+		{"HUB_NAME", "Friendly name for the sensor hub (required)", ""},
+		{"HUB_IP_ADDRESS", "IP address of the sensor hub (required)", ""},
+	}
+
+	for index := range environmentEntries {
+		environmentEntries[index].name = config.ENVIRONMENT_VARIABLE_PREFIX + environmentEntries[index].name
+	}
+
+	columnWidth := NAME_COLUMN_WIDTH
+	for _, entry := range append(flagEntries, environmentEntries...) {
+		columnWidth = max(columnWidth, len(entry.name)+1)
+	}
+
+	fmt.Fprintf(writer, "%s - %s\n", PROJECT_TITLE, PROJECT_DESCRIPTION)
+	fmt.Fprintf(writer, "  %s\n", PROJECT_URL)
+	fmt.Fprintf(writer, "\n")
+
+	fmt.Fprintf(writer, "Usage:\n")
+	fmt.Fprintf(writer, "  %s [flags]\n", os.Args[0])
+	fmt.Fprintf(writer, "\n")
+
+	fmt.Fprintf(writer, "Flags:\n")
+	for _, entry := range flagEntries {
+		fmt.Fprintf(writer, "  %-*s%s\n", columnWidth, entry.name, entry.describe())
+	}
+	fmt.Fprintf(writer, "\n")
+
+	fmt.Fprintf(writer, "Environment variables:\n")
+	for _, entry := range environmentEntries {
+		fmt.Fprintf(writer, "  %-*s%s\n", columnWidth, entry.name, entry.describe())
+	}
+	fmt.Fprintf(writer, "\n")
+
+	fmt.Fprintf(writer, "%s\n", PROJECT_COPYRIGHT)
 }

@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
@@ -12,11 +13,19 @@ import (
 // Poll updates the hub's metrics on a fixed interval. A single goroutine owns the session, so no
 // locking is required. On error it marks the hub down and re-establishes the session for the next
 // tick (sessions can expire or be bumped by another client logging in from the same host).
-func Poll(h *Hub, interval time.Duration) {
+func Poll(ctx context.Context, h *Hub, interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
-	for range ticker.C {
+	for {
+		select {
+		case <-ctx.Done():
+			slog.Info("Stopped polling hub", "hub", h.Name, "ip_address", h.IPAddress)
+			return
+
+		case <-ticker.C:
+		}
+
 		if err := update(h); err != nil {
 			slog.Warn("Error while updating hub metrics", "hub", h.Name, "ip_address", h.IPAddress, "error", err)
 			h.Up.Set(0)
